@@ -1,4 +1,4 @@
-package com.homee.mapboxnavigation
+package com.drive-app.mapboxnavigation
 
 import android.annotation.SuppressLint
 import android.content.res.Configuration
@@ -42,7 +42,7 @@ import com.mapbox.navigation.core.trip.session.LocationMatcherResult
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import com.mapbox.navigation.core.trip.session.RouteProgressObserver
 import com.mapbox.navigation.core.trip.session.VoiceInstructionsObserver
-import com.homee.mapboxnavigation.databinding.NavigationViewBinding
+import com.drive-app.mapboxnavigation.databinding.NavigationViewBinding
 import com.mapbox.api.directions.v5.DirectionsCriteria
 import com.mapbox.navigation.base.trip.model.RouteLegProgress
 import com.mapbox.navigation.base.trip.model.RouteProgress

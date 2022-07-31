@@ -1,4 +1,4 @@
-package com.homee.mapboxnavigation
+package com.drive-app.mapboxnavigation
 
 import android.content.pm.PackageManager
 import com.facebook.react.bridge.ReactApplicationContext
