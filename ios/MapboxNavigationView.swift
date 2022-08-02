@@ -1,6 +1,49 @@
+import UIKit
+import MapboxMaps
 import MapboxCoreNavigation
 import MapboxNavigation
 import MapboxDirections
+
+open class DriveNavNightStyle: NightStyle {
+
+    public required init() {
+        super.init()
+        
+        mapStyleURL = URL(string: "mapbox://styles/driveapp/cl28en201000415mkpdop4fj9")!
+        previewMapStyleURL = mapStyleURL
+    }
+    
+    open override func apply() {
+        super.apply()
+        let phoneTraitCollection = UITraitCollection(userInterfaceIdiom: .phone)
+        
+        TopBannerView.appearance(for: phoneTraitCollection).backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
+        BottomBannerView.appearance(for: phoneTraitCollection).backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
+        InstructionsBannerView.appearance(for: phoneTraitCollection).backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
+    
+    }
+}
+
+
+// class DriveNavDayStyle: DayStyle {
+//     required init() {
+//         super.init()
+        
+//         mapStyleURL = URL(string: "mapbox://styles/driveapp/cl28en201000415mkpdop4fj9")!
+//         previewMapStyleURL = mapStyleURL
+//         styleType = .day
+//     }
+    
+//     override func apply() {
+//         super.apply()
+        
+//         BottomBannerView.appearance().backgroundColor = .black
+//         // BottomBannerView.appearance().textColor = .white
+        
+//         InstructionsCardContainerView.appearance(whenContainedInInstancesOf: [InstructionsCardCell.self]).customBackgroundColor = .black
+//     }
+// }
+
 
 // // adapted from https://pspdfkit.com/blog/2017/native-view-controllers-and-react-native/ and https://github.com/mslabenyak/react-native-mapbox-navigation/blob/master/ios/Mapbox/MapboxNavigationView.swift
 extension UIView {
@@ -33,6 +76,7 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
   @objc var showsEndOfRouteFeedback: Bool = false
   @objc var hideStatusView: Bool = false
   @objc var mute: Bool = false
+  @objc var localeIdentifier: String = "en_US"
   
   @objc var onLocationChange: RCTDirectEventBlock?
   @objc var onRouteProgressChange: RCTDirectEventBlock?
@@ -76,6 +120,8 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
 
     // let options = NavigationRouteOptions(waypoints: [originWaypoint, destinationWaypoint])
     let options = NavigationRouteOptions(waypoints: [originWaypoint, destinationWaypoint], profileIdentifier: .automobileAvoidingTraffic)
+    options.locale = Locale(identifier: localeIdentifier)
+    print("options.locale set: \(localeIdentifier)")
 
     Directions.shared.calculate(options) { [weak self] (_, result) in
       guard let strongSelf = self, let parentVC = strongSelf.parentViewController else {
@@ -89,10 +135,9 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
           guard let weakSelf = self else {
             return
           }
-          
+
           let navigationService = MapboxNavigationService(routeResponse: response, routeIndex: 0, routeOptions: options, simulating: strongSelf.shouldSimulateRoute ? .always : .never)
-          
-          let navigationOptions = NavigationOptions(navigationService: navigationService)
+          let navigationOptions = NavigationOptions(styles: [DriveNavNightStyle()], navigationService: navigationService)
           let vc = NavigationViewController(for: response, routeIndex: 0, routeOptions: options, navigationOptions: navigationOptions)
 
           vc.showsEndOfRouteFeedback = strongSelf.showsEndOfRouteFeedback
