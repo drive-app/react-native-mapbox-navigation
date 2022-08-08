@@ -41,7 +41,7 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
   var embedded: Bool
   var embedding: Bool
 
-  @objc var waypoints: NSArray<NSArray> = [] {
+  @objc var waypoints: [[NSArray]] = [] {
     didSet { setNeedsLayout() }
   }
   
@@ -88,10 +88,11 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
     
     embedding = true
 
-    let waypointObjects: [Waypoint] = []
+    var waypointObjects: [Waypoint] = []
     for wp in waypoints {
+      let w = wp as! NSArray
       waypointObjects.append(
-        Waypoint(coordinate: CLLocationCoordinate2D(latitude: wp[1] as! CLLocationDegrees, longitude: wp[0] as! CLLocationDegrees))
+        Waypoint(coordinate: CLLocationCoordinate2D(latitude: w[1] as! CLLocationDegrees, longitude: w[0] as! CLLocationDegrees))
       )
     }
 

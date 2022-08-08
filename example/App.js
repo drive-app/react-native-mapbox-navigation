@@ -41,8 +41,10 @@ const App = () => {
   return (
     <SafeAreaView style={backgroundStyle}>
       <NavigationComponent
-        origin={[-105.140629, 39.760194]}
-        destination={[-105.156544, 39.761801]}
+        waypoints={[
+          [-105.140629, 39.760194],
+          [-105.156544, 39.761801],
+        ]}
       />
     </SafeAreaView>
   );
