@@ -1,14 +1,10 @@
-import UIKit
-import MapboxMaps
 import MapboxCoreNavigation
 import MapboxNavigation
 import MapboxDirections
 
-open class DriveNavNightStyle: NightStyle {
-
+open class DriveNavStyle: NightStyle {
     public required init() {
         super.init()
-        
         mapStyleURL = URL(string: "mapbox://styles/driveapp/cl28en201000415mkpdop4fj9")!
         previewMapStyleURL = mapStyleURL
     }
@@ -24,25 +20,6 @@ open class DriveNavNightStyle: NightStyle {
     }
 }
 
-
-// class DriveNavDayStyle: DayStyle {
-//     required init() {
-//         super.init()
-        
-//         mapStyleURL = URL(string: "mapbox://styles/driveapp/cl28en201000415mkpdop4fj9")!
-//         previewMapStyleURL = mapStyleURL
-//         styleType = .day
-//     }
-    
-//     override func apply() {
-//         super.apply()
-        
-//         BottomBannerView.appearance().backgroundColor = .black
-//         // BottomBannerView.appearance().textColor = .white
-        
-//         InstructionsCardContainerView.appearance(whenContainedInInstancesOf: [InstructionsCardCell.self]).customBackgroundColor = .black
-//     }
-// }
 
 
 // // adapted from https://pspdfkit.com/blog/2017/native-view-controllers-and-react-native/ and https://github.com/mslabenyak/react-native-mapbox-navigation/blob/master/ios/Mapbox/MapboxNavigationView.swift
@@ -63,12 +40,8 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
   weak var navViewController: NavigationViewController?
   var embedded: Bool
   var embedding: Bool
-  
-  @objc var origin: NSArray = [] {
-    didSet { setNeedsLayout() }
-  }
-  
-  @objc var destination: NSArray = [] {
+
+  @objc var waypoints: NSArray<NSArray> = [] {
     didSet { setNeedsLayout() }
   }
   
@@ -111,17 +84,19 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
   }
   
   private func embed() {
-    guard origin.count == 2 && destination.count == 2 else { return }
+    guard waypoints.count >= 2 else { return }
     
     embedding = true
 
-    let originWaypoint = Waypoint(coordinate: CLLocationCoordinate2D(latitude: origin[1] as! CLLocationDegrees, longitude: origin[0] as! CLLocationDegrees))
-    let destinationWaypoint = Waypoint(coordinate: CLLocationCoordinate2D(latitude: destination[1] as! CLLocationDegrees, longitude: destination[0] as! CLLocationDegrees))
+    let waypointObjects: [Waypoint] = []
+    for wp in waypoints {
+      waypointObjects.append(
+        Waypoint(coordinate: CLLocationCoordinate2D(latitude: wp[1] as! CLLocationDegrees, longitude: wp[0] as! CLLocationDegrees))
+      )
+    }
 
-    // let options = NavigationRouteOptions(waypoints: [originWaypoint, destinationWaypoint])
-    let options = NavigationRouteOptions(waypoints: [originWaypoint, destinationWaypoint], profileIdentifier: .automobileAvoidingTraffic)
+    let options = NavigationRouteOptions(waypoints: waypointObjects, profileIdentifier: .automobileAvoidingTraffic)
     options.locale = Locale(identifier: localeIdentifier)
-    print("options.locale set: \(localeIdentifier)")
 
     Directions.shared.calculate(options) { [weak self] (_, result) in
       guard let strongSelf = self, let parentVC = strongSelf.parentViewController else {
@@ -137,7 +112,7 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
           }
 
           let navigationService = MapboxNavigationService(routeResponse: response, routeIndex: 0, routeOptions: options, simulating: strongSelf.shouldSimulateRoute ? .always : .never)
-          let navigationOptions = NavigationOptions(styles: [DriveNavNightStyle()], navigationService: navigationService)
+          let navigationOptions = NavigationOptions(styles: [DriveNavStyle()], navigationService: navigationService)
           let vc = NavigationViewController(for: response, routeIndex: 0, routeOptions: options, navigationOptions: navigationOptions)
 
           vc.showsEndOfRouteFeedback = strongSelf.showsEndOfRouteFeedback
