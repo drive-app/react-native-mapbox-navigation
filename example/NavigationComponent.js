@@ -12,9 +12,7 @@ const Navigation = props => {
         <MapboxNavigation
           showsEndOfRouteFeedback={true}
           shouldSimulateRoute={true}
-          origin={origin}
-          destination={destination}
-          showsEndOfRouteFeedback={false}
+          waypoints={waypoints}
           hideStatusView
           onLocationChange={event => {
             console.log('onLocationChange', event.nativeEvent);

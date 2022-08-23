@@ -10,7 +10,7 @@ import React, {useEffect} from 'react';
 import {SafeAreaView, useColorScheme} from 'react-native';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import NavigationComponent from './NavigationComponent';
-import {PermissionsAndroid} from 'react-native';
+import {PermissionsAndroid, Platform} from 'react-native';
 
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -22,16 +22,18 @@ const App = () => {
 
   useEffect(() => {
     const requestLocationPermission = async () => {
-      try {
-        await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: 'Example App',
-            message: 'Example App access to your location ',
-          },
-        );
-      } catch (err) {
-        console.warn(err);
+      if(Platform.OS === "android"){
+        try {
+          await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            {
+              title: 'Example App',
+              message: 'Example App access to your location ',
+            },
+          );
+        } catch (err) {
+          console.warn(err);
+        }
       }
     };
 
