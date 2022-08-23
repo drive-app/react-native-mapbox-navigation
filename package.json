@@ -12,8 +12,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/drive-appondemand/react-native-mapbox-navigation.git",
-    "baseUrl": "https://github.com/drive-appondemand/react-native-mapbox-navigation.git"
+    "url": "git+https://github.com/drive-app/react-native-mapbox-navigation.git",
+    "baseUrl": "https://github.com/drive-app/react-native-mapbox-navigation.git"
   },
   "keywords": [
     "react-native",
