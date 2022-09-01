@@ -164,7 +164,6 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
       
       if isFinalLeg {
           if waypoints.count >= 25 {
-              if (currentCount == 0) {
                   currentCount += waypointCount / waypointCount
                   if currentCount <= waypointCount {
                       currentArrayStart += 25
@@ -219,7 +218,6 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
                   } else {
                       return true
                   }
-              }
           }
       }
       
