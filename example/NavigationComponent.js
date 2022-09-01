@@ -4,7 +4,7 @@ import {StyleSheet, View} from 'react-native';
 import MapboxNavigation from '@driveapp/react-native-mapbox-navigation';
 
 const Navigation = props => {
-  const {origin, destination} = props;
+  const {origin, destination, waypoints} = props;
 
   return (
     <View style={styles.container}>

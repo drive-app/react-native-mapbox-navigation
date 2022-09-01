@@ -2,11 +2,14 @@ import MapboxCoreNavigation
 import MapboxNavigation
 import MapboxDirections
 
+var currentCount = 0;
+var waypointCount = 0;
+var currentArrayStart = 0;
+var currentArrayEnd = 24
+
 open class DriveNavStyle: NightStyle {
     public required init() {
         super.init()
-        mapStyleURL = URL(string: "mapbox://styles/driveapp/cl28en201000415mkpdop4fj9")!
-        previewMapStyleURL = mapStyleURL
     }
     
     open override func apply() {
@@ -82,57 +85,63 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
     // cleanup and teardown any existing resources
     self.navViewController?.removeFromParent()
   }
+    
+
   
   private func embed() {
     guard waypoints.count >= 2 else { return }
     
     embedding = true
+      
+    waypointCount = waypoints.count / 25
 
     var waypointObjects: [Waypoint] = []
-    for wp in waypoints {
-      let w = wp as! NSArray
+      for wp in waypoints[..<25] {
+        let w = wp as NSArray
       waypointObjects.append(
         Waypoint(coordinate: CLLocationCoordinate2D(latitude: w[1] as! CLLocationDegrees, longitude: w[0] as! CLLocationDegrees))
       )
     }
 
-    let options = NavigationRouteOptions(waypoints: waypointObjects, profileIdentifier: .automobileAvoidingTraffic)
-    options.locale = Locale(identifier: localeIdentifier)
-
-    Directions.shared.calculate(options) { [weak self] (_, result) in
-      guard let strongSelf = self, let parentVC = strongSelf.parentViewController else {
-        return
-      }
       
-      switch result {
-        case .failure(let error):
-          strongSelf.onError!(["message": error.localizedDescription])
-        case .success(let response):
-          guard let weakSelf = self else {
-            return
+      
+          let options = NavigationRouteOptions(waypoints: waypointObjects, profileIdentifier: .automobileAvoidingTraffic)
+          options.locale = Locale(identifier: localeIdentifier)
+
+          Directions.shared.calculate(options) { [weak self] (_, result) in
+            guard let strongSelf = self, let parentVC = strongSelf.parentViewController else {
+              return
+            }
+            
+            switch result {
+              case .failure(let error):
+                strongSelf.onError!(["message": error.localizedDescription])
+              case .success(let response):
+                guard self != nil else {
+                  return
+                }
+
+                let navigationService = MapboxNavigationService(routeResponse: response, routeIndex: 0, routeOptions: options, simulating: strongSelf.shouldSimulateRoute ? .always : .never)
+                let navigationOptions = NavigationOptions(styles: [DriveNavStyle()], navigationService: navigationService)
+                let vc = NavigationViewController(for: response, routeIndex: 0, routeOptions: options, navigationOptions: navigationOptions)
+
+                vc.showsEndOfRouteFeedback = strongSelf.showsEndOfRouteFeedback
+                StatusView.appearance().isHidden = strongSelf.hideStatusView
+
+                NavigationSettings.shared.voiceMuted = strongSelf.mute;
+                
+                vc.delegate = strongSelf
+              
+                parentVC.addChild(vc)
+                strongSelf.addSubview(vc.view)
+                vc.view.frame = strongSelf.bounds
+                vc.didMove(toParent: parentVC)
+                strongSelf.navViewController = vc
+            }
+            
+            strongSelf.embedding = false
+            strongSelf.embedded = true
           }
-
-          let navigationService = MapboxNavigationService(routeResponse: response, routeIndex: 0, routeOptions: options, simulating: strongSelf.shouldSimulateRoute ? .always : .never)
-          let navigationOptions = NavigationOptions(styles: [DriveNavStyle()], navigationService: navigationService)
-          let vc = NavigationViewController(for: response, routeIndex: 0, routeOptions: options, navigationOptions: navigationOptions)
-
-          vc.showsEndOfRouteFeedback = strongSelf.showsEndOfRouteFeedback
-          StatusView.appearance().isHidden = strongSelf.hideStatusView
-
-          NavigationSettings.shared.voiceMuted = strongSelf.mute;
-          
-          vc.delegate = strongSelf
-        
-          parentVC.addChild(vc)
-          strongSelf.addSubview(vc.view)
-          vc.view.frame = strongSelf.bounds
-          vc.didMove(toParent: parentVC)
-          strongSelf.navViewController = vc
-      }
-      
-      strongSelf.embedding = false
-      strongSelf.embedded = true
-    }
   }
   
   func navigationViewController(_ navigationViewController: NavigationViewController, didUpdate progress: RouteProgress, with location: CLLocation, rawLocation: CLLocation) {
@@ -151,7 +160,78 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
   }
   
   func navigationViewController(_ navigationViewController: NavigationViewController, didArriveAt waypoint: Waypoint) -> Bool {
-    onArrive?(["message": ""]);
-    return true;
+      let isFinalLeg = navigationViewController.navigationService.routeProgress.isFinalLeg
+      
+      if isFinalLeg {
+          if waypoints.count >= 25 {
+              if (currentCount == 0) {
+                  currentCount += waypointCount / waypointCount
+                  if currentCount <= waypointCount {
+                      currentArrayStart += 25
+                      currentArrayEnd += 25
+                      embedding = true
+
+                      var waypointObjects: [Waypoint] = []
+                        for wp in waypoints[currentArrayStart..<currentArrayEnd] {
+                          let w = wp as NSArray
+                        waypointObjects.append(
+                          Waypoint(coordinate: CLLocationCoordinate2D(latitude: w[1] as! CLLocationDegrees, longitude: w[0] as! CLLocationDegrees))
+                        )
+                      }
+                        
+                            let options = NavigationRouteOptions(waypoints: waypointObjects, profileIdentifier: .automobileAvoidingTraffic)
+                            options.locale = Locale(identifier: localeIdentifier)
+
+                            Directions.shared.calculate(options) { [weak self] (_, result) in
+                              guard let strongSelf = self, let parentVC = strongSelf.parentViewController else {
+                                return
+                              }
+                              
+                              switch result {
+                                case .failure(let error):
+                                  strongSelf.onError!(["message": error.localizedDescription])
+                                case .success(let response):
+                                  guard self != nil else {
+                                    return
+                                  }
+
+                                  let navigationService = MapboxNavigationService(routeResponse: response, routeIndex: 0, routeOptions: options, simulating: strongSelf.shouldSimulateRoute ? .always : .never)
+                                  let navigationOptions = NavigationOptions(styles: [DriveNavStyle()], navigationService: navigationService)
+                                  let vc = NavigationViewController(for: response, routeIndex: 0, routeOptions: options, navigationOptions: navigationOptions)
+
+                                  vc.showsEndOfRouteFeedback = strongSelf.showsEndOfRouteFeedback
+                                  StatusView.appearance().isHidden = strongSelf.hideStatusView
+
+                                  NavigationSettings.shared.voiceMuted = strongSelf.mute;
+                                  
+                                  vc.delegate = strongSelf
+                                
+                                  parentVC.addChild(vc)
+                                  strongSelf.addSubview(vc.view)
+                                  vc.view.frame = strongSelf.bounds
+                                  vc.didMove(toParent: parentVC)
+                                  strongSelf.navViewController = vc
+                              }
+                              
+                              strongSelf.embedding = false
+                              strongSelf.embedded = true
+                            }
+                  } else {
+                      return true
+                  }
+              }
+          }
+      }
+      
+      return true;
   }
 }
+
+extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0 ..< Swift.min($0 + size, count)])
+        }
+    }
+}
+
