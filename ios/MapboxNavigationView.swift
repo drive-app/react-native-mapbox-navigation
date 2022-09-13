@@ -1,6 +1,8 @@
 import MapboxCoreNavigation
 import MapboxNavigation
 import MapboxDirections
+import Polyline
+import Turf
 
 open class DriveNavStyle: NightStyle {
     public required init() {
@@ -40,6 +42,7 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
   weak var navViewController: NavigationViewController?
   var embedded: Bool
   var embedding: Bool
+  var routeResults: Dictionary<Int, RouteResponse>
 
   @objc var waypoints: [[NSArray]] = [] {
     didSet { setNeedsLayout() }
@@ -60,6 +63,7 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
   override init(frame: CGRect) {
     self.embedded = false
     self.embedding = false
+    self.routeResults = [Int:RouteResponse]()
     super.init(frame: frame)
   }
   
@@ -87,51 +91,153 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
     guard waypoints.count >= 2 else { return }
     
     embedding = true
-
+    
+    print("embedding with \(waypoints.count) waypoints")
     var waypointObjects: [Waypoint] = []
     for wp in waypoints {
       let w = wp as! NSArray
+      var newWaypoint = Waypoint(coordinate: CLLocationCoordinate2D(latitude: w[1] as! CLLocationDegrees, longitude: w[0] as! CLLocationDegrees))
+      newWaypoint.separatesLegs = false
       waypointObjects.append(
-        Waypoint(coordinate: CLLocationCoordinate2D(latitude: w[1] as! CLLocationDegrees, longitude: w[0] as! CLLocationDegrees))
+        newWaypoint
       )
     }
 
-    let options = NavigationRouteOptions(waypoints: waypointObjects, profileIdentifier: .automobileAvoidingTraffic)
-    options.locale = Locale(identifier: localeIdentifier)
 
-    Directions.shared.calculate(options) { [weak self] (_, result) in
-      guard let strongSelf = self, let parentVC = strongSelf.parentViewController else {
-        return
-      }
+    // groups of 25 or less waypoints
+    var waypointGroups: [[Waypoint]] = [];
+    for waypointIndex in 0...(waypointObjects.count - 1) {
+        let groupIndex = (waypointIndex/25)
+        print("waypointIndex: \(waypointIndex), groupIndex: \(groupIndex)")
+        if(waypointGroups.count - 1 < groupIndex){
+            waypointGroups.append([])
+        }
+        waypointGroups[groupIndex].append(waypointObjects[waypointIndex])
+    }
       
-      switch result {
-        case .failure(let error):
-          strongSelf.onError!(["message": error.localizedDescription])
-        case .success(let response):
-          guard let weakSelf = self else {
-            return
-          }
+    // check if any of the groups have only one waypoint
+    for waypointGroupIndex in 0...(waypointGroups.count - 1) {
+        if(waypointGroups[waypointGroupIndex].count < 2) {
+            // remove the last waypoint from the previous group and place it before the lonley waypoint in the current waypoint group
+            let newFirstWaypoint: Waypoint = waypointGroups[waypointGroupIndex - 1].remove(at: 24)
+            waypointGroups[waypointGroupIndex].insert(newFirstWaypoint, at: 0)
+            print("handled lonelyc waypoint edgecase")
+        }
+    }
 
-          let navigationService = MapboxNavigationService(routeResponse: response, routeIndex: 0, routeOptions: options, simulating: strongSelf.shouldSimulateRoute ? .always : .never)
-          let navigationOptions = NavigationOptions(styles: [DriveNavStyle()], navigationService: navigationService)
-          let vc = NavigationViewController(for: response, routeIndex: 0, routeOptions: options, navigationOptions: navigationOptions)
+    print("Generated \(waypointGroups.count) waypoint groups.")
 
-          vc.showsEndOfRouteFeedback = strongSelf.showsEndOfRouteFeedback
-          StatusView.appearance().isHidden = strongSelf.hideStatusView
+    // fetch directions for each group of 25 (or less for the last group) waypoints
+    print("Generating async dispatch group")
+    let asyncDispatchGroup = DispatchGroup()
 
-          NavigationSettings.shared.voiceMuted = strongSelf.mute;
-          
-          vc.delegate = strongSelf
+    for waypointGroupIndex in 0...(waypointGroups.count - 1) {
+      asyncDispatchGroup.enter()
+      let options = NavigationRouteOptions(waypoints: waypointGroups[waypointGroupIndex], profileIdentifier: .automobileAvoidingTraffic)
+      options.locale = Locale(identifier: localeIdentifier)
+      Directions.shared.calculate(options) { [weak self] (_, result) in
+        guard let strongSelf = self, let parentVC = strongSelf.parentViewController else {
+          return
+        }
         
-          parentVC.addChild(vc)
-          strongSelf.addSubview(vc.view)
-          vc.view.frame = strongSelf.bounds
-          vc.didMove(toParent: parentVC)
-          strongSelf.navViewController = vc
+        switch result {
+          case .failure(let error):
+            print("Waypoint Group Index \(waypointGroupIndex) (with \(waypointGroups[waypointGroupIndex].count) waypoints) failure.")
+            print(error.localizedDescription)
+            strongSelf.onError!(["message": error.localizedDescription])
+            
+          case .success(let response):
+            guard let weakSelf = self else {
+              return
+            }
+            print("Waypoint Group Index \(waypointGroupIndex) success.")
+            strongSelf.routeResults[waypointGroupIndex] = response
+        }
+        
+        strongSelf.embedding = false
+        strongSelf.embedded = true
+        print("Waypoint Group Index \(waypointGroupIndex) complete.")
+        asyncDispatchGroup.leave()
       }
+    }
+    
+    asyncDispatchGroup.notify(queue: .main) {
+        print("Async Dispatch Group Notified Complete")
+
+        print("initialising compiled route response variables.")
+        let firstRouteResponse: RouteResponse = self.routeResults[0]!
+        var compiledRoutes: [Route] = [Route]()
+        var compiledLegs: [RouteLeg] = [RouteLeg]()
+        var compiledShape: LineString = LineString([])
+        var compiledDistance: CLLocationDistance = 0
+        var compiledExpectedTravelTime: TimeInterval = 0
+        var compiledOptions: RouteOptions = NavigationRouteOptions(
+            waypoints: waypointObjects,
+            profileIdentifier: .automobileAvoidingTraffic
+        )
+        compiledOptions.locale = Locale(identifier: self.localeIdentifier)
+
+        // compile the routes
+        print("Compiling the route response legs")
+        
+        for key in 0...(Array(self.routeResults.keys).count - 1) {
+            print("routeLeg key \(key)")
+            // get a list of the first routes from all the route responses
+            for routeLeg in self.routeResults[key]!.routes![0].legs {
+                compiledLegs.append(routeLeg)
+            }
+            // append the coordinates to the compiled shape for the line string
+            for coordinate in self.routeResults[key]!.routes![0].shape!.coordinates {
+                compiledShape.coordinates.append(coordinate)
+            }
+            
+            // incremenet the compiled distance
+            compiledDistance += self.routeResults[key]!.routes![0].distance
+            
+            // increment the compiled travel time
+            compiledExpectedTravelTime += self.routeResults[key]!.routes![0].expectedTravelTime
+        }
+        
+        print("Instantiating the final route from thce compiled legs")
+        compiledRoutes.append(Route(
+            legs: compiledLegs,
+            shape: compiledShape,
+            distance: compiledDistance,
+            expectedTravelTime: compiledExpectedTravelTime
+        ))
+        
+        print("Instantiating route response")
+        let compiledRouteResponse: RouteResponse = RouteResponse(
+            httpResponse: firstRouteResponse.httpResponse,
+            identifier: firstRouteResponse.identifier,
+            routes: compiledRoutes,
+            waypoints: waypointObjects,
+            options: .route(compiledOptions),
+            credentials: firstRouteResponse.credentials
+        )
+
+        print("Completed compiled route response, rendering nav")  
+        guard let parentVC = self.parentViewController else {
+            return
+        }
+         
+        let navigationService = MapboxNavigationService(routeResponse: compiledRouteResponse, routeIndex: 0, routeOptions: compiledOptions, simulating: self.shouldSimulateRoute ? .always : .never)
+        let navigationOptions = NavigationOptions(styles: [DriveNavStyle()], navigationService: navigationService)
+        let vc = NavigationViewController(for: compiledRouteResponse, routeIndex: 0, routeOptions: compiledOptions, navigationOptions: navigationOptions)
+
+        vc.showsEndOfRouteFeedback = self.showsEndOfRouteFeedback
+        StatusView.appearance().isHidden = self.hideStatusView
+
+        NavigationSettings.shared.voiceMuted = self.mute;
+
+        vc.delegate = self
+
+        parentVC.addChild(vc)
+        self.addSubview(vc.view)
+        vc.view.frame = self.bounds
+        vc.didMove(toParent: parentVC)
+        self.navViewController = vc
       
-      strongSelf.embedding = false
-      strongSelf.embedded = true
     }
   }
   
