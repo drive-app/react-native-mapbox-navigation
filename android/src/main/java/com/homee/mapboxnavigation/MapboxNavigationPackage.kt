@@ -1,4 +1,4 @@
-package com.drive-app.mapboxnavigation
+package com.driveapp.mapboxnavigation
 
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule

@@ -1,4 +1,4 @@
-package com.drive-app.mapboxnavigation
+package com.driveapp.mapboxnavigation
 
 import android.content.pm.PackageManager
 import com.facebook.react.bridge.ReactApplicationContext
