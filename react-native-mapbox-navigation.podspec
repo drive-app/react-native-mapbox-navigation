@@ -39,13 +39,13 @@ Pod::Spec.new do |s|
   s.homepage     = "https://github.com/drive-app/react-native-mapbox-navigation"
   s.license    = { :type => "MIT", :file => "LICENSE" }
   s.authors      = { "drive-app" => "support@driveapp.com" }
-  s.platforms    = { :ios => "11.0" }
+  s.platforms    = { :ios => "12.0" }
   s.source       = { :git => "https://github.com/drive-app/react-native-mapbox-navigation.git", :tag => "#{s.version}" }
 
   s.source_files = "ios/**/*.{h,m,swift}"
   s.requires_arc = true
 
   s.dependency "React-Core"
-  s.dependency "MapboxNavigation", "~> 2.6.0"
+  s.dependency "MapboxNavigation", "~> 2.7.2"
 end
 
