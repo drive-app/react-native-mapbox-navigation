@@ -18,7 +18,7 @@ open class DriveNavStyle: NightStyle {
         TopBannerView.appearance(for: phoneTraitCollection).backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
         BottomBannerView.appearance(for: phoneTraitCollection).backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
         InstructionsBannerView.appearance(for: phoneTraitCollection).backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
-    
+        BottomPaddingView.appearance(for: phoneTraitCollection).backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
     }
 }
 
@@ -236,6 +236,7 @@ class MapboxNavigationView: UIView, NavigationViewControllerDelegate {
         self.addSubview(vc.view)
         vc.view.frame = self.bounds
         vc.didMove(toParent: parentVC)
+        vc.floatingButtons = nil
         self.navViewController = vc
       
     }
