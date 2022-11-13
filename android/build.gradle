@@ -93,7 +93,7 @@ def configureReactNativePom(def pom) {
         name packageJson.title
         artifactId packageJson.name
         version = packageJson.version
-        group = "com.driveapp.mapboxnavigation"
+        group = "com.homee.mapboxnavigation"
         description packageJson.description
         url packageJson.repository.baseUrl
 
