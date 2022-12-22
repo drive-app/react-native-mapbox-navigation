@@ -80,13 +80,14 @@ repositories {
 
 dependencies {
     //noinspection GradleDynamicVersion
-    implementation 'com.facebook.react:react-native:+'  // From node_modules
-    implementation 'com.mapbox.maps:android:10.10.0'
-    implementation 'com.mapbox.mapboxsdk:mapbox-sdk-turf:6.8.0'
-    implementation 'androidx.asynclayoutinflater:asynclayoutinflater:1.0.0'
+    implementation 'com.facebook.react:react-native:+' // From node_modules
+    implementation 'com.mapbox.navigation:android:2.9.5'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'androidx.cardview:cardview:1.0.0'
+
+    // implementation 'com.mapbox.mapboxsdk:mapbox-sdk-turf:6.8.0'
+    // implementation 'androidx.asynclayoutinflater:asynclayoutinflater:1.0.0'
 }
 
 def configureReactNativePom(def pom) {
