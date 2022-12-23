@@ -1,9 +1,21 @@
 // android/build.gradle
 
-def DEFAULT_COMPILE_SDK_VERSION = 33
-def DEFAULT_BUILD_TOOLS_VERSION = '31.0.0'
-def DEFAULT_MIN_SDK_VERSION = 24
-def DEFAULT_TARGET_SDK_VERSION = 33
+// based on:
+//
+// * https://github.com/facebook/react-native/blob/0.60-stable/template/android/build.gradle
+//   original location:
+//   - https://github.com/facebook/react-native/blob/0.58-stable/local-cli/templates/HelloWorld/android/build.gradle
+//
+// * https://github.com/facebook/react-native/blob/0.60-stable/template/android/app/build.gradle
+//   original location:
+//   - https://github.com/facebook/react-native/blob/0.58-stable/local-cli/templates/HelloWorld/android/app/build.gradle
+
+// https://www.cognizantsoftvision.com/blog/creating-an-android-native-module-for-react-native/
+
+def DEFAULT_COMPILE_SDK_VERSION = 30
+def DEFAULT_BUILD_TOOLS_VERSION = '30.0.2'
+def DEFAULT_MIN_SDK_VERSION = 21
+def DEFAULT_TARGET_SDK_VERSION = 30
 
 def safeExtGet(prop, fallback) {
     rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
@@ -25,7 +37,7 @@ buildscript {
             jcenter()
         }
         dependencies {
-            classpath 'com.android.tools.build:gradle:7.1.2'
+            classpath 'com.android.tools.build:gradle:7.5.1'
         }
     }
 
@@ -61,6 +73,9 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    buildFeatures {
+        viewBinding true
+    }
 }
 
 repositories {
@@ -80,14 +95,11 @@ repositories {
 
 dependencies {
     //noinspection GradleDynamicVersion
-    implementation 'com.facebook.react:react-native:+' // From node_modules
+    implementation 'com.facebook.react:react-native:+'  // From node_modules
     implementation "com.mapbox.navigation:android:2.8.0"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'androidx.cardview:cardview:1.0.0'
-
-    implementation 'com.mapbox.mapboxsdk:mapbox-sdk-turf:6.8.0'
-    implementation 'androidx.asynclayoutinflater:asynclayoutinflater:1.0.0'
 }
 
 def configureReactNativePom(def pom) {
