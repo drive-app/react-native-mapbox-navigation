@@ -1,5 +1,5 @@
 require "json"
-
+use_frameworks!
 package = JSON.parse(File.read(File.join(__dir__, "package.json")))
 
 # TargetsToChangeToDynamic = ['MapboxMobileEvents']
@@ -18,6 +18,7 @@ def $RNMBNAV.post_install(installer)
     end
   end
 end
+
 
 def $RNMBNAV.pre_install(installer)
   installer.aggregate_targets.each do |target|
