@@ -34,10 +34,10 @@ Pod::Spec.new do |s|
   s.version      = package["version"]
   s.summary      = package["description"]
   s.description  = <<-DESC
-                  Smart Mapbox turn-by-turn routing based on real-time traffic for React Native.
+                  Smart Mapbox turn-by-turn routing base d on real-time traffic for React Native.
                    DESC
   s.homepage     = "https://github.com/drive-app/react-native-mapbox-navigation"
-  s.license    = { :type => "MIT", :file => "LICENSE" }
+  s.license      = { :type => "MIT", :file => "LICENSE" }
   s.authors      = { "drive-app" => "support@driveapp.com" }
   s.platforms    = { :ios => "12.0" }
   s.source       = { :git => "https://github.com/drive-app/react-native-mapbox-navigation.git", :tag => "#{s.version}" }
@@ -46,6 +46,6 @@ Pod::Spec.new do |s|
   s.requires_arc = true
 
   s.dependency "React-Core"
-  s.dependency "MapboxNavigation", "~> 2.10.0"
+  s.dependency "MapboxNavigation", "~> 2.8.1"
 end
 
