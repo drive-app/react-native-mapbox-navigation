@@ -1,4 +1,5 @@
 require "json"
+use_frameworks!
 package = JSON.parse(File.read(File.join(__dir__, "package.json")))
 
 # TargetsToChangeToDynamic = ['MapboxMobileEvents']
@@ -46,6 +47,6 @@ Pod::Spec.new do |s|
   s.requires_arc = true
 
   s.dependency "React-Core"
-  s.dependency "MapboxNavigation", "~> 2.8.1"
+  s.dependency "MapboxNavigation", "~> 2.10.0"
 end
 
