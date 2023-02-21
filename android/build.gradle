@@ -14,7 +14,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'maven-publish'
 
 buildscript {
-    ext.kotlin_version = '1.6.20'
+    ext.kotlin_version = '1.8.10'
     // The Android Gradle plugin is only required when opening the android folder stand-alone.
     // This avoids unnecessary downloads and potential conflicts when the library is included as a
     // module dependency in an application project.
