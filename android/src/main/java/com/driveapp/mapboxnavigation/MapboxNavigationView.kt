@@ -7,8 +7,8 @@ import com.facebook.react.uimanager.events.RCTEventEmitter
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.geojson.Point
-import com.mapbox.mapboxsdk.Mapbox
-import com.mapbox.mapboxsdk.camera.CameraPosition
+import com.mapbox.maps.Mapbox
+import com.mapbox.maps.camera.CameraPosition
 import com.mapbox.navigation.base.internal.extensions.applyDefaultParams
 import com.mapbox.navigation.base.internal.route.RouteUrl
 import com.mapbox.navigation.base.trip.model.RouteProgress
@@ -23,8 +23,8 @@ import com.mapbox.navigation.ui.OnNavigationReadyCallback
 import com.mapbox.navigation.ui.listeners.NavigationListener
 import com.mapbox.navigation.ui.map.NavigationMapboxMap
 
-
-class MapboxNavigationView(private val context: ThemedReactContext) : NavigationView(context.baseContext), NavigationListener, OnNavigationReadyCallback {
+class MapboxNavigationView(private val context: ThemedReactContext) :
+        NavigationView(context.baseContext), NavigationListener, OnNavigationReadyCallback {
     private var origin: Point? = null
     private var destination: Point? = null
     private var shouldSimulateRoute = false
@@ -48,15 +48,15 @@ class MapboxNavigationView(private val context: ThemedReactContext) : Navigation
     }
 
     private val measureAndLayout = Runnable {
-        measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
-                MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY))
+        measure(
+                MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
+        )
         layout(left, top, right, bottom)
     }
 
     private fun getInitialCameraPosition(): CameraPosition {
-        return CameraPosition.Builder()
-                .zoom(15.0)
-                .build()
+        return CameraPosition.Builder().zoom(15.0).build()
     }
 
     override fun onNavigationReady(isRunning: Boolean) {
@@ -83,46 +83,49 @@ class MapboxNavigationView(private val context: ThemedReactContext) : Navigation
 
             this.navigationMapboxMap = this.retrieveNavigationMapboxMap()!!
 
-            //this.retrieveMapboxNavigation()?.let { this.mapboxNavigation = it } // this does not work
+            // this.retrieveMapboxNavigation()?.let { this.mapboxNavigation = it } // this does not
+            // work
 
             // fetch the route
-            val navigationOptions = MapboxNavigation
-                    .defaultNavigationOptionsBuilder(context, accessToken)
-                    .isFromNavigationUi(true)
-                    .build()
+            val navigationOptions =
+                    MapboxNavigation.defaultNavigationOptionsBuilder(context, accessToken)
+                            .isFromNavigationUi(true)
+                            .build()
             this.mapboxNavigation = MapboxNavigationProvider.create(navigationOptions)
-            this.mapboxNavigation.requestRoutes(RouteOptions.builder()
-                    .applyDefaultParams()
-                    .accessToken(accessToken)
-                    .coordinates(mutableListOf(origin, destination))
-                    .profile(RouteUrl.PROFILE_DRIVING)
-                    .steps(true)
-                    .voiceInstructions(true)
-                    .build(), routesReqCallback)
+            this.mapboxNavigation.requestRoutes(
+                    RouteOptions.builder()
+                            .applyDefaultParams()
+                            .accessToken(accessToken)
+                            .coordinates(mutableListOf(origin, destination))
+                            .profile(RouteUrl.PROFILE_DRIVING)
+                            .steps(true)
+                            .voiceInstructions(true)
+                            .build(),
+                    routesReqCallback
+            )
         } catch (ex: Exception) {
             sendErrorToReact(ex.toString())
         }
     }
 
-    private val routesReqCallback = object : RoutesRequestCallback {
-        override fun onRoutesReady(routes: List<DirectionsRoute>) {
-            if (routes.isEmpty()) {
-                sendErrorToReact("No route found")
-                return;
+    private val routesReqCallback =
+            object : RoutesRequestCallback {
+                override fun onRoutesReady(routes: List<DirectionsRoute>) {
+                    if (routes.isEmpty()) {
+                        sendErrorToReact("No route found")
+                        return
+                    }
+
+                    startNav(routes[0])
+                }
+
+                override fun onRoutesRequestFailure(
+                        throwable: Throwable,
+                        routeOptions: RouteOptions
+                ) {}
+
+                override fun onRoutesRequestCanceled(routeOptions: RouteOptions) {}
             }
-
-            startNav(routes[0])
-        }
-
-        override fun onRoutesRequestFailure(throwable: Throwable, routeOptions: RouteOptions) {
-
-
-        }
-
-        override fun onRoutesRequestCanceled(routeOptions: RouteOptions) {
-
-        }
-    }
 
     private fun startNav(route: DirectionsRoute) {
         val optionsBuilder = NavigationViewOptions.builder(this.getContext())
@@ -135,34 +138,34 @@ class MapboxNavigationView(private val context: ThemedReactContext) : Navigation
         this.startNavigation(optionsBuilder.build())
     }
 
-    private val locationObserver = object : LocationObserver {
-        override fun onRawLocationChanged(rawLocation: Location) {
+    private val locationObserver =
+            object : LocationObserver {
+                override fun onRawLocationChanged(rawLocation: Location) {}
 
-        }
+                override fun onEnhancedLocationChanged(
+                        enhancedLocation: Location,
+                        keyPoints: List<Location>
+                ) {
+                    val event = Arguments.createMap()
+                    event.putDouble("longitude", enhancedLocation.longitude)
+                    event.putDouble("latitude", enhancedLocation.latitude)
+                    context.getJSModule(RCTEventEmitter::class.java)
+                            .receiveEvent(id, "onLocationChange", event)
+                }
+            }
 
-        override fun onEnhancedLocationChanged(
-                enhancedLocation: Location,
-                keyPoints: List<Location>
-        ) {
-            val event = Arguments.createMap()
-            event.putDouble("longitude", enhancedLocation.longitude)
-            event.putDouble("latitude", enhancedLocation.latitude)
-            context.getJSModule(RCTEventEmitter::class.java).receiveEvent(id, "onLocationChange", event)
-        }
-    }
-
-
-    private val routeProgressObserver = object : RouteProgressObserver {
-        override fun onRouteProgressChanged(routeProgress: RouteProgress) {
-            val event = Arguments.createMap()
-            event.putDouble("distanceTraveled", routeProgress.distanceTraveled.toDouble())
-            event.putDouble("durationRemaining", routeProgress.durationRemaining.toDouble())
-            event.putDouble("fractionTraveled", routeProgress.fractionTraveled.toDouble())
-            event.putDouble("distanceRemaining", routeProgress.distanceRemaining.toDouble())
-            context.getJSModule(RCTEventEmitter::class.java).receiveEvent(id, "onRouteProgressChange", event)
-        }
-    }
-
+    private val routeProgressObserver =
+            object : RouteProgressObserver {
+                override fun onRouteProgressChanged(routeProgress: RouteProgress) {
+                    val event = Arguments.createMap()
+                    event.putDouble("distanceTraveled", routeProgress.distanceTraveled.toDouble())
+                    event.putDouble("durationRemaining", routeProgress.durationRemaining.toDouble())
+                    event.putDouble("fractionTraveled", routeProgress.fractionTraveled.toDouble())
+                    event.putDouble("distanceRemaining", routeProgress.distanceRemaining.toDouble())
+                    context.getJSModule(RCTEventEmitter::class.java)
+                            .receiveEvent(id, "onRouteProgressChange", event)
+                }
+            }
 
     private fun sendErrorToReact(error: String?) {
         val event = Arguments.createMap()
@@ -170,25 +173,25 @@ class MapboxNavigationView(private val context: ThemedReactContext) : Navigation
         context.getJSModule(RCTEventEmitter::class.java).receiveEvent(id, "onError", event)
     }
 
-    override fun onNavigationRunning() {
+    override fun onNavigationRunning() {}
 
-    }
-
-    override fun onFinalDestinationArrival(enableDetailedFeedbackFlowAfterTbt: Boolean, enableArrivalExperienceFeedback: Boolean) {
+    override fun onFinalDestinationArrival(
+            enableDetailedFeedbackFlowAfterTbt: Boolean,
+            enableArrivalExperienceFeedback: Boolean
+    ) {
         super.onFinalDestinationArrival(this.showsEndOfRouteFeedback, this.showsEndOfRouteFeedback)
         val event = Arguments.createMap()
         event.putString("onArrive", "")
         context.getJSModule(RCTEventEmitter::class.java).receiveEvent(id, "onArrive", event)
     }
 
-    override fun onNavigationFinished() {
-
-    }
+    override fun onNavigationFinished() {}
 
     override fun onCancelNavigation() {
         val event = Arguments.createMap()
         event.putString("onCancelNavigation", "Navigation Closed")
-        context.getJSModule(RCTEventEmitter::class.java).receiveEvent(id, "onCancelNavigation", event)
+        context.getJSModule(RCTEventEmitter::class.java)
+                .receiveEvent(id, "onCancelNavigation", event)
     }
 
     override fun onDestroy() {

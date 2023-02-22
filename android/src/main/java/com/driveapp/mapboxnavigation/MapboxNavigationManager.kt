@@ -8,14 +8,19 @@ import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.annotations.ReactProp
 import com.mapbox.geojson.Point
-import com.mapbox.mapboxsdk.Mapbox
+import com.mapbox.maps.Mapbox
 import javax.annotation.Nonnull
 
-class MapboxNavigationManager(var mCallerContext: ReactApplicationContext) : SimpleViewManager<MapboxNavigationView>() {
+class MapboxNavigationManager(var mCallerContext: ReactApplicationContext) :
+        SimpleViewManager<MapboxNavigationView>() {
     init {
         mCallerContext.runOnUiQueueThread {
             try {
-                val app = mCallerContext.packageManager.getApplicationInfo(mCallerContext.packageName, PackageManager.GET_META_DATA)
+                val app =
+                        mCallerContext.packageManager.getApplicationInfo(
+                                mCallerContext.packageName,
+                                PackageManager.GET_META_DATA
+                        )
                 val bundle = app.metaData
                 val accessToken = bundle.getString("MAPBOX_ACCESS_TOKEN")
                 Mapbox.getInstance(mCallerContext, accessToken)
@@ -29,7 +34,9 @@ class MapboxNavigationManager(var mCallerContext: ReactApplicationContext) : Sim
         return "MapboxNavigation"
     }
 
-    public override fun createViewInstance(@Nonnull reactContext: ThemedReactContext): MapboxNavigationView {
+    public override fun createViewInstance(
+            @Nonnull reactContext: ThemedReactContext
+    ): MapboxNavigationView {
         return MapboxNavigationView(reactContext)
     }
 
@@ -38,13 +45,19 @@ class MapboxNavigationManager(var mCallerContext: ReactApplicationContext) : Sim
         super.onDropViewInstance(view)
     }
 
-    override fun getExportedCustomDirectEventTypeConstants(): MutableMap<String, Map<String, String>>? {
+    override fun getExportedCustomDirectEventTypeConstants():
+            MutableMap<String, Map<String, String>>? {
         return MapBuilder.of<String, Map<String, String>>(
-                "onLocationChange", MapBuilder.of("registrationName", "onLocationChange"),
-                "onError", MapBuilder.of("registrationName", "onError"),
-                "onCancelNavigation", MapBuilder.of("registrationName", "onCancelNavigation"),
-                "onArrive", MapBuilder.of("registrationName", "onArrive"),
-                "onRouteProgressChange", MapBuilder.of("registrationName", "onRouteProgressChange"),
+                "onLocationChange",
+                MapBuilder.of("registrationName", "onLocationChange"),
+                "onError",
+                MapBuilder.of("registrationName", "onError"),
+                "onCancelNavigation",
+                MapBuilder.of("registrationName", "onCancelNavigation"),
+                "onArrive",
+                MapBuilder.of("registrationName", "onArrive"),
+                "onRouteProgressChange",
+                MapBuilder.of("registrationName", "onRouteProgressChange"),
         )
     }
 
