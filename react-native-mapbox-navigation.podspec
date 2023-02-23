@@ -11,7 +11,6 @@ def $RNMBNAV.post_install(installer)
     if TargetsToChangeToDynamic.include?(pod.name)
       if pod.send(:build_type) != Pod::BuildType.dynamic_framework
         pod.instance_variable_set(:@build_type,Pod::BuildType.dynamic_framework)
-        puts "* Changed #{pod.name} to `#{pod.send(:build_type)}`"
         fail "Unable to change build_type" unless mobile_events_target.send(:build_type) == Pod::BuildType.dynamic_framework
       end
     end
@@ -23,7 +22,6 @@ def $RNMBNAV.pre_install(installer)
   installer.aggregate_targets.each do |target|
     target.pod_targets.select { |p| TargetsToChangeToDynamic.include?(p.name) }.each do |mobile_events_target|
       mobile_events_target.instance_variable_set(:@build_type,Pod::BuildType.dynamic_framework)
-      puts "* Changed #{mobile_events_target.name} to #{mobile_events_target.send(:build_type)}"
       fail "Unable to change build_type" unless mobile_events_target.send(:build_type) == Pod::BuildType.dynamic_framework
     end
   end
